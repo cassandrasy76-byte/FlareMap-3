@@ -1,0 +1,245 @@
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --background: #080d18;
+  --surface: #111a2b;
+  --surface-light: #19253a;
+  --border: rgba(255,255,255,0.08);
+  --text: #f4f7ff;
+  --muted: #8996aa;
+  --accent: #ff7048;
+  --accent-light: #ff987b;
+  --green: #50d6a0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(255,112,72,0.10), transparent 35%),
+    radial-gradient(ellipse at 90% 20%, rgba(65,113,190,0.12), transparent 35%),
+    var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 28px 20px;
+}
+
+main {
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* HEADER */
+
+.header {
+  max-width: 1000px;
+  margin: 0 auto 38px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.header h1 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.status-dot {
+  color: #ffb49e;
+  background: rgba(255,112,72,0.12);
+  border: 1px solid rgba(255,112,72,0.25);
+  border-radius: 30px;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* SECTIONS */
+
+section {
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 15px;
+}
+
+.panel {
+  background: linear-gradient(145deg, #172338, #101827);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.panel p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* SENSOR CARDS */
+
+.readings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.reading-card {
+  background: linear-gradient(150deg, #19263a, #111a2b);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 23px;
+  min-width: 0;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.reading-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,112,72,0.35);
+}
+
+.reading-card span {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  font-size: 22px;
+}
+
+.reading-card h3 {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+
+.reading-card p {
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-top: 8px;
+}
+
+/* HOUSE FLOORPLAN */
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: -7px;
+}
+
+.house-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px;
+  background: rgba(5,10,20,0.5);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.room {
+  min-height: 125px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 15px;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #202f47, #172338);
+  border: 1px solid rgba(255,255,255,0.07);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.2s ease;
+}
+
+.room:hover {
+  background: linear-gradient(145deg, #293c59, #1c2c43);
+}
+
+/* DISCLAIMER */
+
+.disclaimer {
+  color: #758399;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+  max-width: 650px;
+  margin: 35px auto 15px;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  body {
+    padding: 20px 15px;
+  }
+
+  .header {
+    margin-bottom: 30px;
+  }
+
+  .header h1 {
+    font-size: 25px;
+  }
+
+  .panel {
+    padding: 20px;
+  }
+
+  .readings {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .reading-card {
+    display: grid;
+    grid-template-columns: 45px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 17px;
+  }
+
+  .reading-card h3,
+  .reading-card p {
+    margin: 0;
+  }
+
+  .reading-card p {
+    font-size: 21px;
+  }
+
+  .reading-card h3 {
+    font-size: 12px;
+  }
+
+  .room {
+    min-height: 105px;
+    font-size: 12px;
+  }
+}

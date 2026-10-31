@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlareMap | Home Monitoring</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#080d18">
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+</head>
+
+<section id="adminPanel">
+  <h2>Administrator Access</h2>
+
+  <div id="adminLogin">
+    <input
+      id="adminEmail"
+      type="email"
+      placeholder="Administrator email"
+      autocomplete="username"
+    >
+
+    <input
+      id="adminPassword"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
+
+    <button id="adminLoginButton" type="button">
+      Sign In
+    </button>
+  </div>
+
+  <div id="adminControls" hidden>
+    <p id="adminStatus">Administrator signed in.</p>
+
+    <button id="enablePushButton" type="button">
+      Enable Notifications
+    </button>
+
+    <button id="broadcastAlarmButton" type="button">
+      Send 10-Second Alert
+    </button>
+
+    <button id="adminLogoutButton" type="button">
+      Sign Out
+    </button>
+  </div>
+
+  <p id="adminMessage" role="status" aria-live="polite"></p>
+</section>
+
+<body>
+  <header class="header">
+    <div>
+      <h1>🔥 FlareMap</h1>
+      <p>Home Fire and Smoke Monitoring</p>
+    </div>
+    <span class="status-dot">Prototype</span>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>System Status</h2>
+      <p id="connection">ESP32: Not connected</p>
+      <p id="alert">Waiting for sensor data</p>
+    </section>
+
+    <section>
+      <h2>Sensor Readings</h2>
+      <div class="readings">
+        <article class="reading-card">
+          <span>🌡️</span>
+          <h3>Temperature</h3>
+          <p id="temperature">-- °C</p>
+        </article>
+        <article class="reading-card">
+          <span>💧</span>
+          <h3>Humidity</h3>
+          <p id="humidity">-- %</p>
+        </article>
+        <article class="reading-card">
+          <span>🌫️</span>
+          <h3>Smoke Sensor</h3>
+          <p id="smoke">--</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>House Room Map</h2>
+      <p class="hint">Example layout — customize the rooms later.</p>
+      <div class="house-map">
+        <div class="room">Bedroom 1</div>
+        <div class="room">Bedroom 2</div>
+        <div class="room">Living Room</div>
+        <div class="room">Kitchen</div>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      Educational prototype only. Not a certified fire alarm
+      or a replacement for certified smoke alarms or emergency systems.
+    </p>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
