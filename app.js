@@ -1,7 +1,7 @@
 // =====================================
 // FLAREMAP FIREBASE CONFIGURATION
 // =====================================
-
+ 
 const firebaseConfig = {
   apiKey: "AIzaSyANFcISiv0jZL7U4sefd5i0eIUqG7r7MDU",
   authDomain: "flaremap-a1849.firebaseapp.com",
