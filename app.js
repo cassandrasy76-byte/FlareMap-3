@@ -1,5 +1,5 @@
 // =====================================
-// FLAREMAP FIREBASE CONFIGURATION
+// FLAREMAP FIREBASE CONFIGURATION 
 // =====================================
  
 const firebaseConfig = {
