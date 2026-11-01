@@ -1,5 +1,5 @@
 {
-  "name": "FlareMap",
+  "name": "FlareMap", 
   "short_name": "FlareMap",
   "description": "IoT-Based Multi-Room Fire and Gas Monitoring System",
   "start_url": "./index.html",
