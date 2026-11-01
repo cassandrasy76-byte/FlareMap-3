@@ -2,114 +2,155 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlareMap | Home Monitoring</title>
-  <link rel="stylesheet" href="./style.css">
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#080d18">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d94f91">
+
+  <title>FlareMap Dashboard</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<header>
+  <a class="brand" href="./">FlareMap</a>
+  <span>SMART ROOM MONITORING</span>
+</header>
+
+<main>
+
+  <section class="hero">
+    <p class="eyebrow">ROOM SAFETY MONITORING</p>
+    <h1>Fire &amp; Gas Dashboard</h1>
+    <p>Monitor room conditions and receive administrator alerts.</p>
+  </section>
+
+  <div class="notice">
+    <strong>Prototype notice:</strong>
+    The displayed sensor values are sample data, not live readings.
+    FlareMap is an educational prototype, not a certified fire or gas alarm.
+  </div>
+
+  <h2>Room 01 <small>DEMO DATA</small></h2>
+
+  <section class="sensor-grid">
+
+    <article class="sensor-card">
+      <label>Temperature · DHT22</label>
+      <strong id="temperature">-- °C</strong>
+    </article>
+
+    <article class="sensor-card">
+      <label>Humidity · DHT22</label>
+      <strong id="humidity">-- %</strong>
+    </article>
+
+    <article class="sensor-card">
+      <label>Gas · MQ-5</label>
+      <strong id="mq5">--</strong>
+      <small>Raw sample value</small>
+    </article>
+
+    <article class="sensor-card">
+      <label>Carbon Monoxide · MQ-7</label>
+      <strong id="mq7">--</strong>
+      <small>Raw sample value</small>
+    </article>
+
+  </section>
+
+  <section class="panel">
+    <h2>System Status</h2>
+
+    <p><strong>Connection:</strong>
+      <span id="connection">Demo mode</span>
+    </p>
+
+    <p id="roomStatus">Sample readings only</p>
+
+    <span id="alert" class="status">SAMPLE DATA</span>
+
+    <p id="lastUpdated"></p>
+  </section>
+
+  <section class="panel admin-panel">
+
+    <p class="eyebrow">RESTRICTED ACCESS</p>
+    <h2>Administrator Login</h2>
+
+    <div id="adminLogin">
+
+      <label for="adminEmail">Email Address</label>
+      <input
+        id="adminEmail"
+        type="email"
+        placeholder="Administrator email"
+        autocomplete="username"
+      >
+
+      <label for="adminPassword">Password</label>
+      <input
+        id="adminPassword"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+      <button id="adminLoginButton" type="button">
+        Admin Login
+      </button>
+
+      <button
+        id="resendVerificationButton"
+        class="secondary"
+        type="button"
+      >
+        Resend Verification Email
+      </button>
+
+    </div>
+
+    <div id="adminControls" hidden>
+
+      <p class="success-text">
+        Administrator signed in successfully.
+      </p>
+
+      <button id="enablePushButton" class="secondary" type="button">
+        Enable Notifications on This Device
+      </button>
+
+      <button id="broadcastAlarmButton" class="alarm" type="button">
+        SEND FLAREMAP ALARM
+      </button>
+
+      <button id="adminLogoutButton" class="secondary" type="button">
+        Log Out
+      </button>
+
+      <p class="hint">
+        Only registered devices can receive notifications.
+      </p>
+
+    </div>
+
+    <p id="adminMessage" role="status" aria-live="polite"></p>
+
+  </section>
+
+  <footer>
+    FlareMap · Educational Prototype
+  </footer>
+
+</main>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-</head>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-<section id="adminPanel">
-  <h2>Administrator Access</h2>
+<script src="app.js"></script>
 
-  <div id="adminLogin">
-    <input
-      id="adminEmail"
-      type="email"
-      placeholder="Administrator email"
-      autocomplete="username"
-    >
-
-    <input
-      id="adminPassword"
-      type="password"
-      placeholder="Password"
-      autocomplete="current-password"
-    >
-
-    <button id="adminLoginButton" type="button">
-      Sign In
-    </button>
-  </div>
-
-  <div id="adminControls" hidden>
-    <p id="adminStatus">Administrator signed in.</p>
-
-    <button id="enablePushButton" type="button">
-      Enable Notifications
-    </button>
-
-    <button id="broadcastAlarmButton" type="button">
-      Send 10-Second Alert
-    </button>
-
-    <button id="adminLogoutButton" type="button">
-      Sign Out
-    </button>
-  </div>
-
-  <p id="adminMessage" role="status" aria-live="polite"></p>
-</section>
-
-<body>
-  <header class="header">
-    <div>
-      <h1>🔥 FlareMap</h1>
-      <p>Home Fire and Smoke Monitoring</p>
-    </div>
-    <span class="status-dot">Prototype</span>
-  </header>
-
-  <main>
-    <section class="panel">
-      <h2>System Status</h2>
-      <p id="connection">ESP32: Not connected</p>
-      <p id="alert">Waiting for sensor data</p>
-    </section>
-
-    <section>
-      <h2>Sensor Readings</h2>
-      <div class="readings">
-        <article class="reading-card">
-          <span>🌡️</span>
-          <h3>Temperature</h3>
-          <p id="temperature">-- °C</p>
-        </article>
-        <article class="reading-card">
-          <span>💧</span>
-          <h3>Humidity</h3>
-          <p id="humidity">-- %</p>
-        </article>
-        <article class="reading-card">
-          <span>🌫️</span>
-          <h3>Smoke Sensor</h3>
-          <p id="smoke">--</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>House Room Map</h2>
-      <p class="hint">Example layout — customize the rooms later.</p>
-      <div class="house-map">
-        <div class="room">Bedroom 1</div>
-        <div class="room">Bedroom 2</div>
-        <div class="room">Living Room</div>
-        <div class="room">Kitchen</div>
-      </div>
-    </section>
-
-    <p class="disclaimer">
-      Educational prototype only. Not a certified fire alarm
-      or a replacement for certified smoke alarms or emergency systems.
-    </p>
-  </main>
-
-  <script src="./app.js"></script>
 </body>
 </html>
