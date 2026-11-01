@@ -222,3 +222,36 @@ footer {
     font-size: 23px;
   }
 }
+/* FLAREMAP PINK THEME OVERRIDE */
+
+html,
+body {
+  background-color: #fff7fa !important;
+  color: #442638 !important;
+}
+
+header {
+  background-color: #ffffff !important;
+}
+
+.sensor-card,
+.panel {
+  background-color: #ffffff !important;
+  border-color: #f1d4e2 !important;
+}
+
+.hero h1,
+.brand,
+.sensor-card strong {
+  color: #a92d69 !important;
+}
+
+button {
+  background-color: #d94f91 !important;
+  color: #ffffff !important;
+}
+
+button.secondary {
+  background-color: #fff0f6 !important;
+  color: #a92d69 !important;
+}
