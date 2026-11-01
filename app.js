@@ -265,7 +265,9 @@ pushButton.addEventListener("click", async () => {
     }
 
     const registration =
-      await navigator.serviceWorker.ready;
+  await navigator.serviceWorker.register(
+    "./firebase-messaging-sw.js"
+  );
 
     const token = await messaging.getToken({
       vapidKey: VAPID_KEY,
