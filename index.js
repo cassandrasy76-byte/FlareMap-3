@@ -1,199 +1,165 @@
 
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { defineString } = require("firebase-functions/params");
-const { setGlobalOptions } = require("firebase-functions/v2");
-
-const { initializeApp } = require("firebase-admin/app");
 const {
-  getFirestore,
-  FieldValue
-} = require("firebase-admin/firestore");
-const { getMessaging } = require("firebase-admin/messaging");
+  onCall,
+  HttpsError
+} = require("firebase-functions/v2/https");
 
+const {
+  defineString
+} = require("firebase-functions/params");
+
+const admin = require("firebase-admin");
 const crypto = require("crypto");
 
-initializeApp();
+admin.initializeApp();
 
-const db = getFirestore();
+const ADMIN_EMAILS =
+  defineString("FLAREMAP_ADMIN_EMAILS");
 
-// Must match the name in functions/.env
-const ADMIN_EMAILS = defineString("FLAREMAP_ADMIN_EMAILS");
 
-setGlobalOptions({
-  region: "asia-southeast1",
-  maxInstances: 5
-});
+// =====================================
+// VERIFY ADMINISTRATOR
+// =====================================
 
-// Check whether the caller is an authorized, verified administrator.
 function requireAdmin(request) {
-  if (!request.auth) {
+
+  const user = request.auth?.token;
+
+  if (
+    !user ||
+    !user.email ||
+    user.email_verified !== true
+  ) {
     throw new HttpsError(
       "unauthenticated",
-      "Please sign in."
+      "A verified administrator sign-in is required."
     );
   }
 
-  const email = request.auth.token.email?.toLowerCase();
-  const emailVerified = request.auth.token.email_verified;
-
   const allowedEmails = ADMIN_EMAILS.value()
     .split(",")
-    .map(item => item.trim().toLowerCase())
+    .map(email => email.trim().toLowerCase())
     .filter(Boolean);
 
-  if (
-    !email ||
-    !emailVerified ||
-    !allowedEmails.includes(email)
-  ) {
+  if (!allowedEmails.includes(user.email.toLowerCase())) {
     throw new HttpsError(
       "permission-denied",
-      "Verified administrator access required."
+      "Administrator access required."
     );
   }
 }
 
-// Register a device's FCM token.
-exports.registerFlareMapDevice = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Sign in before registering this device."
-    );
-  }
 
-  const token = request.data?.token;
+// =====================================
+// REGISTER A DEVICE
+// =====================================
 
-  if (
-    typeof token !== "string" ||
-    token.length < 20 ||
-    token.length > 4096
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Invalid device token."
-    );
-  }
+exports.registerFlareMapDevice = onCall(
+  { region: "asia-southeast1" },
 
-  const tokenHash = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+  async request => {
 
-  await db
-    .collection("flareMapDevices")
-    .doc(tokenHash)
-    .set({
-      token,
-      uid: request.auth.uid,
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-  return { success: true };
-});
-
-// Send an administrator-authorized broadcast.
-exports.sendFlareMapAlarm = onCall(async (request) => {
-  requireAdmin(request);
-
-  const lockRef = db
-    .collection("flareMapControl")
-    .doc("broadcast");
-
-  const now = Date.now();
-
-  // Prevent repeated broadcasts within 30 seconds.
-  await db.runTransaction(async (transaction) => {
-    const lock = await transaction.get(lockRef);
-
-    const lastSent = lock.exists
-      ? lock.data().lastSentAt?.toMillis() || 0
-      : 0;
-
-    if (now - lastSent < 30000) {
+    if (!request.auth) {
       throw new HttpsError(
-        "resource-exhausted",
-        "Please wait 30 seconds before sending another alert."
+        "unauthenticated",
+        "Please sign in first."
       );
     }
 
-    transaction.set(lockRef, {
-      lastSentAt: FieldValue.serverTimestamp(),
-      sentBy: request.auth.uid
-    });
-  });
+    const token = request.data?.token;
 
-  const snapshot = await db
-    .collection("flareMapDevices")
-    .get();
+    if (
+      typeof token !== "string" ||
+      token.length < 20 ||
+      token.length > 4096
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Invalid notification token."
+      );
+    }
 
-  const docs = snapshot.docs;
+    const id = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
-  let sent = 0;
-  let failed = 0;
+    await admin.firestore()
+      .collection("flaremapDevices")
+      .doc(id)
+      .set({
+        token,
+        registeredAt:
+          admin.firestore.FieldValue.serverTimestamp()
+      });
 
-  // FCM multicast supports up to 500 tokens per batch.
-  for (let i = 0; i < docs.length; i += 500) {
-    const batch = docs.slice(i, i + 500);
-
-    const validDocs = batch.filter(doc => {
-      const token = doc.data().token;
-      return typeof token === "string" && token.length > 0;
-    });
-
-    if (validDocs.length === 0) continue;
-
-    const tokens = validDocs.map(doc => doc.data().token);
-
-    const result = await getMessaging().sendEachForMulticast({
-      tokens,
-
-      // Data-only message: the service worker handles display.
-      data: {
-        type: "FLAREMAP_ALARM",
-        durationMs: "10000",
-        title: "FlareMap Alert",
-        body: "An administrator has sent a FlareMap alert."
-      },
-
-      android: {
-        priority: "high",
-        ttl: 60000
-      },
-
-      webpush: {
-        headers: {
-          TTL: "60"
-        }
-      }
-    });
-
-    sent += result.successCount;
-    failed += result.failureCount;
-
-    // Remove tokens that Firebase confirms are no longer valid.
-    const cleanup = db.batch();
-
-    result.responses.forEach((response, index) => {
-      const code = response.error?.code;
-
-      if (
-        !response.success &&
-        (
-          code === "messaging/registration-token-not-registered" ||
-          code === "messaging/invalid-registration-token"
-        )
-      ) {
-        cleanup.delete(validDocs[index].ref);
-      }
-    });
-
-    await cleanup.commit();
+    return { success: true };
   }
+);
 
-  return {
-    success: true,
-    sent,
-    failed
-  };
-});
+
+// =====================================
+// SEND ADMINISTRATOR ALARM
+// =====================================
+
+exports.sendFlareMapAlarm = onCall(
+  { region: "asia-southeast1" },
+
+  async request => {
+
+    requireAdmin(request);
+
+    const snapshot = await admin.firestore()
+      .collection("flaremapDevices")
+      .get();
+
+    const tokens = [
+      ...new Set(
+        snapshot.docs
+          .map(doc => doc.data().token)
+          .filter(token => typeof token === "string")
+      )
+    ];
+
+    if (tokens.length === 0) {
+      return {
+        sent: 0,
+        failed: 0,
+        message: "No registered devices."
+      };
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (let i = 0; i < tokens.length; i += 500) {
+
+      const batch = tokens.slice(i, i + 500);
+
+      const result = await admin.messaging()
+        .sendEachForMulticast({
+          tokens: batch,
+
+          data: {
+            title: "FlareMap Alert",
+            body: "An administrator has sent a FlareMap notification.",
+            type: "admin_alert"
+          },
+
+          webpush: {
+            headers: {
+              Urgency: "high"
+            }
+          }
+        });
+
+      sent += result.successCount;
+      failed += result.failureCount;
+    }
+
+    return {
+      sent,
+      failed
+    };
+  }
+);
