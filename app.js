@@ -1,4 +1,7 @@
-// Initialize Firebase
+// =====================================
+// FLAREMAP FIREBASE CONFIGURATION
+// =====================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyANFcISiv0jZL7U4sefd5i0eIUqG7r7MDU",
   authDomain: "flaremap-a1849.firebaseapp.com",
@@ -11,247 +14,347 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-const messaging = firebase.messaging();
-const functions = firebase.functions();
-// FlareMap - Dashboard Demo
 
-const temperatureDisplay = document.getElementById("temperature");
-const humidityDisplay = document.getElementById("humidity");
-const smokeDisplay = document.getElementById("smoke");
-const connectionDisplay = document.getElementById("connection");
-const alertDisplay = document.getElementById("alert");
+const functions =
+  firebase.app().functions("asia-southeast1");
 
-// Demo readings only — not real sensor data.
-function updateDashboard() {
-  const temperature = (25 + Math.random() * 5).toFixed(1);
-  const humidity = Math.round(50 + Math.random() * 15);
-  const smoke = Math.round(100 + Math.random() * 80);
+let messaging = null;
 
-  temperatureDisplay.textContent = temperature + " °C";
-  humidityDisplay.textContent = humidity + " %";
-  smokeDisplay.textContent = smoke;
-
-  connectionDisplay.textContent = "ESP32: Demo mode";
-  alertDisplay.textContent = "Status: Sample readings only";
-}
-
-// Update sample values every 3 seconds.
-updateDashboard();
-setInterval(updateDashboard, 3000);
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-navigator.serviceWorker.register("./serviceworker.js");
-  });
-}
 
 // =====================================
-// FLAREMAP ADMIN AND PUSH NOTIFICATIONS
+// ADMINISTRATOR SETTINGS
 // =====================================
 
-// Replace this with your Firebase Web Push public VAPID key.
-// Get it from Firebase Console > Project settings >
-// Cloud Messaging > Web Push certificates.
-const FLAREMAP_VAPID_KEY = "BKxUMBei3vHExEPRaHhDrw0g0NJaO7r21gA5r0sG3fP-Y-qTgg9_t1_7ZMDKyg4Lwp0vHeNdK8deiPqvAEYk6Ds";
-
-// This only controls whether the admin panel is displayed.
-// The Cloud Function independently verifies admin authorization.
-const FLAREMAP_ADMIN_EMAILS = [
+const ADMIN_EMAILS = [
   "cassandrasy76@gmail.com"
 ];
 
-const adminEmailInput = document.getElementById("adminEmail");
-const adminPasswordInput = document.getElementById("adminPassword");
-const adminLoginButton = document.getElementById("adminLoginButton");
-const adminLogoutButton = document.getElementById("adminLogoutButton");
-const enablePushButton = document.getElementById("enablePushButton");
-const broadcastAlarmButton = document.getElementById("broadcastAlarmButton");
+const VAPID_KEY =
+  "BKxUMBei3vHExEPRaHhDrw0g0NJaO7r21gA5r0sG3fP-Y-qTgg9_t1_7ZMDKyg4Lwp0vHeNdK8deiPqvAEYk6Ds";
 
-const adminLoginPanel = document.getElementById("adminLogin");
-const adminControls = document.getElementById("adminControls");
-const adminMessage = document.getElementById("adminMessage");
 
-const flareFunctions = firebase.app().functions("asia-southeast1");
+// =====================================
+// HTML ELEMENTS
+// =====================================
 
-function showAdminMessage(message) {
+const el = id => document.getElementById(id);
+
+const emailInput = el("adminEmail");
+const passwordInput = el("adminPassword");
+
+const loginButton = el("adminLoginButton");
+const resendButton = el("resendVerificationButton");
+const logoutButton = el("adminLogoutButton");
+
+const pushButton = el("enablePushButton");
+const alarmButton = el("broadcastAlarmButton");
+
+const loginPanel = el("adminLogin");
+const adminControls = el("adminControls");
+const adminMessage = el("adminMessage");
+
+function showMessage(message) {
   if (adminMessage) {
     adminMessage.textContent = message;
   }
 }
+
+
+// =====================================
+// ADMINISTRATOR AUTHORIZATION
+// =====================================
 
 function isFlareMapAdmin(user) {
   return Boolean(
     user &&
     user.email &&
     user.emailVerified &&
-    FLAREMAP_ADMIN_EMAILS.includes(user.email.toLowerCase())
+    ADMIN_EMAILS.includes(user.email.toLowerCase())
   );
 }
 
-// Update administrator controls when authentication changes.
-auth.onAuthStateChanged((user) => {
-  const isAdmin = isFlareMapAdmin(user);
+function updateAdminInterface(user) {
+  const allowed = isFlareMapAdmin(user);
 
-  if (adminLoginPanel) {
-    adminLoginPanel.hidden = isAdmin;
-  }
+  loginPanel.hidden = allowed;
+  adminControls.hidden = !allowed;
 
-  if (adminControls) {
-    adminControls.hidden = !isAdmin;
-  }
-
-  if (user && !isAdmin) {
-    showAdminMessage(
-      "This account does not have administrator access."
+  if (
+    user &&
+    user.email &&
+    !user.emailVerified &&
+    ADMIN_EMAILS.includes(user.email.toLowerCase())
+  ) {
+    showMessage(
+      "Your email is not verified. Use Resend Verification Email."
     );
-  } else if (isAdmin) {
-    showAdminMessage("Administrator signed in.");
+  } else if (allowed) {
+    showMessage("Administrator signed in.");
+  } else if (user) {
+    showMessage("This account does not have administrator access.");
   }
-});
+}
 
-// Administrator sign-in.
-adminLoginButton?.addEventListener("click", async () => {
-  const email = adminEmailInput.value.trim();
-  const password = adminPasswordInput.value;
+auth.onAuthStateChanged(updateAdminInterface);
+
+
+// =====================================
+// DEMO SENSOR VALUES
+// =====================================
+
+function updateDashboard() {
+  el("temperature").textContent =
+    (25 + Math.random() * 5).toFixed(1) + " °C";
+
+  el("humidity").textContent =
+    Math.round(50 + Math.random() * 15) + " %";
+
+  el("mq5").textContent =
+    Math.round(100 + Math.random() * 80);
+
+  el("mq7").textContent =
+    Math.round(100 + Math.random() * 80);
+
+  el("connection").textContent = "Demo mode";
+
+  el("roomStatus").textContent =
+    "Demo readings only";
+
+  el("alert").textContent = "SAMPLE DATA";
+
+  el("lastUpdated").textContent =
+    "Updated: " + new Date().toLocaleTimeString();
+}
+
+updateDashboard();
+
+setInterval(updateDashboard, 5000);
+
+
+// =====================================
+// ADMINISTRATOR LOGIN
+// =====================================
+
+loginButton.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
 
   if (!email || !password) {
-    showAdminMessage("Enter your email and password.");
+    showMessage("Enter your email and password.");
     return;
   }
 
-  adminLoginButton.disabled = true;
+  loginButton.disabled = true;
 
   try {
-    const result = await auth.signInWithEmailAndPassword(
-      email,
-      password
+    const result =
+      await auth.signInWithEmailAndPassword(email, password);
+
+    await result.user.reload();
+
+    const user = auth.currentUser;
+
+    if (!user.emailVerified) {
+      showMessage(
+        "Email not verified. Click Resend Verification Email."
+      );
+      return;
+    }
+
+    if (!isFlareMapAdmin(user)) {
+      await auth.signOut();
+      showMessage("Administrator access denied.");
+      return;
+    }
+
+    updateAdminInterface(user);
+
+    showMessage("Administrator login successful.");
+
+  } catch (error) {
+    console.error(error);
+
+    showMessage(
+      "Login failed: " + error.message
     );
 
-    if (!result.user.emailVerified) {
-      showAdminMessage(
-        "Please verify your email before using administrator features."
-      );
-      await auth.signOut();
-      return;
-    }
-
-    if (!isFlareMapAdmin(result.user)) {
-      showAdminMessage("Administrator access denied.");
-      await auth.signOut();
-      return;
-    }
-
-    showAdminMessage("Administrator signed in successfully.");
-  } catch (error) {
-    showAdminMessage("Sign-in failed: " + error.message);
   } finally {
-    adminLoginButton.disabled = false;
+    loginButton.disabled = false;
   }
 });
 
-// Administrator sign-out.
-adminLogoutButton?.addEventListener("click", async () => {
+
+// =====================================
+// RESEND VERIFICATION EMAIL
+// =====================================
+
+resendButton.addEventListener("click", async () => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    showMessage(
+      "Sign in first before requesting a verification email."
+    );
+    return;
+  }
+
+  try {
+    await user.sendEmailVerification();
+
+    showMessage(
+      "Verification email sent. Check your inbox and spam folder."
+    );
+
+  } catch (error) {
+    showMessage(
+      "Could not send verification email: " + error.message
+    );
+  }
+});
+
+
+// =====================================
+// ADMINISTRATOR LOGOUT
+// =====================================
+
+logoutButton.addEventListener("click", async () => {
   try {
     await auth.signOut();
-    showAdminMessage("Signed out.");
+    showMessage("Signed out.");
+
   } catch (error) {
-    showAdminMessage("Sign-out failed: " + error.message);
+    showMessage(error.message);
   }
 });
 
-// Register this device for Firebase push notifications.
-enablePushButton?.addEventListener("click", async () => {
-  enablePushButton.disabled = true;
+
+// =====================================
+// ENABLE PUSH NOTIFICATIONS
+// =====================================
+
+pushButton.addEventListener("click", async () => {
+  pushButton.disabled = true;
 
   try {
-    if (!("serviceWorker" in navigator)) {
-      throw new Error("Service workers are not supported.");
-    }
-
-    if (!("Notification" in window)) {
-      throw new Error("Notifications are not supported.");
+    if (!isFlareMapAdmin(auth.currentUser)) {
+      throw new Error("Verified administrator access required.");
     }
 
     if (
-      FLAREMAP_VAPID_KEY ===
-      "BKxUMBei3vHExEPRaHhDrw0g0NJaO7r21gA5r0sG3fP-Y-qTgg9_t1_7ZMDKyg4Lwp0vHeNdK8deiPqvAEYk6Ds"
+      !("serviceWorker" in navigator) ||
+      !("Notification" in window)
     ) {
-      throw new Error("Add your Web Push public VAPID key first.");
+      throw new Error("Notifications are not supported.");
     }
 
-    const permission = await Notification.requestPermission();
+    if (!(await firebase.messaging.isSupported())) {
+      throw new Error(
+        "Firebase Messaging is not supported in this browser."
+      );
+    }
+
+    if (!messaging) {
+      messaging = firebase.messaging();
+    }
+
+    const permission =
+      await Notification.requestPermission();
 
     if (permission !== "granted") {
       throw new Error("Notification permission was not granted.");
     }
 
-    if (!auth.currentUser) {
-      await auth.signInAnonymously();
-    }
-
-    const supported = await firebase.messaging.isSupported();
-
-    if (!supported) {
-      throw new Error("Firebase Messaging is not supported here.");
-    }
-
-    const registration = await navigator.serviceWorker.ready;
+    const registration =
+      await navigator.serviceWorker.ready;
 
     const token = await messaging.getToken({
-      vapidKey: FLAREMAP_VAPID_KEY,
+      vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration
     });
 
     if (!token) {
-      throw new Error("Firebase did not provide a device token.");
+      throw new Error("Firebase did not return a device token.");
     }
 
     const registerDevice =
-      flareFunctions.httpsCallable("registerFlareMapDevice");
+      functions.httpsCallable("registerFlareMapDevice");
 
     await registerDevice({ token });
 
-    showAdminMessage(
-      "Notifications enabled and this device registered."
+    showMessage(
+      "This device is registered for FlareMap notifications."
     );
+
   } catch (error) {
-    showAdminMessage("Registration failed: " + error.message);
+    console.error(error);
+
+    showMessage(
+      "Notification setup failed: " + error.message
+    );
+
   } finally {
-    enablePushButton.disabled = false;
+    pushButton.disabled = false;
   }
 });
 
-// Send an administrator-only broadcast.
-broadcastAlarmButton?.addEventListener("click", async () => {
-  const user = auth.currentUser;
 
-  if (!isFlareMapAdmin(user)) {
-    showAdminMessage("Administrator access required.");
+// =====================================
+// ADMIN-ONLY ALARM BUTTON
+// =====================================
+
+alarmButton.addEventListener("click", async () => {
+
+  if (!isFlareMapAdmin(auth.currentUser)) {
+    showMessage(
+      "Only a verified administrator can send an alarm."
+    );
     return;
   }
 
-  const confirmed = window.confirm(
-    "Send a FlareMap alert notification to registered devices?"
+  const confirmed = confirm(
+    "Send a FlareMap notification to registered devices?"
   );
 
   if (!confirmed) return;
 
-  broadcastAlarmButton.disabled = true;
+  alarmButton.disabled = true;
 
   try {
     const sendAlarm =
-      flareFunctions.httpsCallable("sendFlareMapAlarm");
+      functions.httpsCallable("sendFlareMapAlarm");
 
     const result = await sendAlarm();
 
-    showAdminMessage(
-      "Broadcast request completed. Sent: " +
+    showMessage(
+      "Alarm request completed. Sent: " +
       result.data.sent +
       ", failed: " +
       result.data.failed
     );
+
   } catch (error) {
-    showAdminMessage("Broadcast failed: " + error.message);
+    console.error(error);
+
+    showMessage(
+      "Alarm failed: " + error.message
+    );
+
   } finally {
-    broadcastAlarmButton.disabled = false;
+    alarmButton.disabled = false;
   }
 });
+
+
+// =====================================
+// SERVICE WORKER
+// =====================================
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./serviceworker.js")
+      .catch(error => console.error(
+        "Service worker registration failed:", error
+      ));
+  });
+}
